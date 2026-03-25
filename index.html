@@ -981,7 +981,9 @@ async function sbGet(id){
 }
 
 async function sbSet(id, data){
-  const {error} = await _sb.from('restopro_data').upsert({id, data}, {onConflict:'id'});
+  const {error} = await _sb.from('restopro_data')
+    .update({data})
+    .eq('id', id);
   if(error) throw new Error(error.message);
 }
 
