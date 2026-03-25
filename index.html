@@ -491,6 +491,7 @@ tbody tr:hover{background:var(--surface2);}
   .form-row{grid-template-columns:1fr;}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body id="artifacts-component-root-html">
 
@@ -969,27 +970,19 @@ const KEYS={sedes:'rp_sedes',proveedores:'rp_prov',productos:'rp_prod',inventari
 const SB_URL = 'https://imwdrsxxkcfgrobscimg.supabase.co';
 const SB_PROXY = '/api/sb';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imltd2Ryc3h4a2NmZ3JvYnNjaW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMTcyOTksImV4cCI6MjA4OTg5MzI5OX0.Z0DBpUA_JqKQsbDwHtlwRqn9XFZvXm0qX4-8CVDB_gs';
+const _sb = window.supabase.createClient(SB_URL, SB_KEY);
 
 async function sbGet(id){
-  return new Promise((resolve,reject)=>{
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', SB_URL+'/rest/v1/restopro_data?id=eq.'+id+'&select=data');
-    xhr.setRequestHeader('apikey', SB_KEY);
-    xhr.setRequestHeader('Authorization', 'Bearer '+SB_KEY);
-    xhr.timeout = 8000;
-    xhr.onload = ()=>{ try{ const rows=JSON.parse(xhr.responseText); resolve(rows?.[0]?.data??null); }catch(e){ resolve(null); } };
-    xhr.onerror = ()=>resolve(null);
-    xhr.ontimeout = ()=>resolve(null);
-    xhr.send();
-  });
+  try{
+    const {data,error} = await _sb.from('restopro_data').select('data').eq('id',id).single();
+    if(error) return null;
+    return data?.data ?? null;
+  }catch(e){ return null; }
 }
 
 async function sbSet(id, data){
-  await fetch(`${SB_URL}/rest/v1/restopro_data?id=eq.${id}`, {
-    method:'PATCH',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-    body: JSON.stringify({data})
-  });
+  const {error} = await _sb.from('restopro_data').upsert({id, data}, {onConflict:'id'});
+  if(error) throw new Error(error.message);
 }
 
 // Local fallback (still used during load before Supabase responds)
